@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Advance Request Form</title>
+</head>
+<body>
+  <h2>Advance Request Form</h2>
+  <form id="advanceForm">
+    <label>ENTITY TYPE: <input type="text" name="entity_type" required></label><br><br>
+    <label>ADVANCE AGAINST: <input type="text" name="advance_against" required></label><br><br>
+    <label>DOCUMENT NO: <input type="text" name="document_no" required></label><br><br>
+    <label>ADVANCE REQ. DATE: <input type="date" name="advance_req_date" required></label><br><br>
+    <label>ADVANCE REQ. NO.: <input type="text" name="advance_req_no" required></label><br><br>
+    <label>ADVANCE REQ. AMT.: <input type="number" name="advance_req_amt" required></label><br><br>
+    <label>ADVANCE REQ. PARTY: <input type="text" name="advance_req_party" required></label><br><br>
+    <label>ADVANCE REQ. PARTY CODE: <input type="text" name="advance_req_party_code" required></label><br><br>
+    <label>EXPECTED ADV. CLOSURE DATE: <input type="date" name="expected_closure_date" required></label><br><br>
+    <label>ATTACHMENT: <input type="file" name="attachment" required></label><br><br>
+    <label>USER EMAIL: <input type="email" name="user_email" required></label><br><br>
+    <label>BILL RECIVE EXPECTED DAYS: <input type="number" name="bill_receive_expected_days" required></label><br><br>
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    document.getElementById("advanceForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const form = document.getElementById("advanceForm");
+      const formData = new FormData(form);
+
+      const response = await fetch("YOUR_SCRIPT_URL", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.text();
+      alert(result);
+      form.reset();
+    });
+  </script>
+</body>
+</html>
