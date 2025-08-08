@@ -9,51 +9,109 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f9f9f9;
+      padding: 10px;
+      margin: 0;
+      background: #f4f4f4;
     }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
     label {
       display: block;
-      margin-top: 10px;
+      margin-top: 12px;
+      font-weight: bold;
     }
+
     input, select {
       width: 100%;
-      padding: 8px;
-      margin-top: 4px;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
     }
+
     button {
+      width: 100%;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
       margin-top: 20px;
-      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
     }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
     #block-message {
       display: none;
       color: red;
       font-weight: bold;
       margin-top: 20px;
+      text-align: center;
+    }
+
+    #g_id_signin {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 5px;
+      }
+      .container {
+        padding: 15px;
+      }
+      input, select {
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
 <body>
 
-<h2>Advance Request Form</h2>
+<div class="container">
+  <h2>Advance Request Form</h2>
 
-<div id="block-message">Access Denied. You are not authorized to access this form.</div>
+  <div id="g_id_signin"></div>
 
-<form id="advanceForm" style="display:none;">
-  <label>ENTITY TYPE <input name="entity_type" required></label>
-  <label>ADVANCE AGAINST <input name="advance_against" required></label>
-  <label>DOCUMENT NO <input name="document_no"></label>
-  <label>ADVANCE REQ. DATE <input name="advance_req_date" type="date" required></label>
-  <label>ADVANCE REQ. NO. <input name="advance_req_no" required></label>
-  <label>ADVANCE REQ. AMT. <input name="advance_req_amt" type="number" required></label>
-  <label>ADVANCE REQ. PARTY <input name="advance_req_party" required></label>
-  <label>ADVANCE REQ. PARTY CODE <input name="advance_req_party_code" required></label>
-  <label>EXPECTED ADV. CLOSURE DATE <input name="expected_closure_date" type="date" required></label>
-  <label>ATTACHMENT OF APPROVED SIGN. COPY <input name="attachment" type="file" accept="image/*,application/pdf"></label>
-  <label>BILL RECIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
-  <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
-  <button type="submit">Submit</button>
-</form>
+  <div id="block-message">🚫 Access Denied. You are not authorized to access this form.</div>
+
+  <form id="advanceForm" style="display:none;">
+    <label>ENTITY TYPE <input name="entity_type" required></label>
+    <label>ADVANCE AGAINST <input name="advance_against" required></label>
+    <label>DOCUMENT NO <input name="document_no"></label>
+    <label>ADVANCE REQ. DATE <input name="advance_req_date" type="date" required></label>
+    <label>ADVANCE REQ. NO. <input name="advance_req_no" required></label>
+    <label>ADVANCE REQ. AMT. <input name="advance_req_amt" type="number" required></label>
+    <label>ADVANCE REQ. PARTY <input name="advance_req_party" required></label>
+    <label>ADVANCE REQ. PARTY CODE <input name="advance_req_party_code" required></label>
+    <label>EXPECTED ADV. CLOSURE DATE <input name="expected_closure_date" type="date" required></label>
+    <label>ATTACHMENT OF APPROVED SIGN. COPY <input name="attachment" type="file" accept="image/*,application/pdf"></label>
+    <label>BILL RECEIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
+    <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
+
+    <button type="submit">Submit</button>
+  </form>
+</div>
 
 <script>
   const allowedEmails = [
@@ -81,6 +139,12 @@
         }
       }
     });
+
+    google.accounts.id.renderButton(
+      document.getElementById("g_id_signin"),
+      { theme: "outline", size: "large", width: "100%" }
+    );
+
     google.accounts.id.prompt();
   };
 
