@@ -7,18 +7,58 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
-    label { display: block; margin-top: 10px; }
-    input, select { width: 100%; padding: 8px; margin-top: 4px; }
-    button { margin-top: 20px; padding: 10px 20px; }
-    #block-message { display: none; color: red; font-weight: bold; margin-top: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f2f2f2;
+      margin: 0;
+    }
+    h2 {
+      text-align: center;
+    }
+    form {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    #block-message {
+      display: none;
+      text-align: center;
+      color: red;
+      font-weight: bold;
+      padding: 10px;
+    }
   </style>
 </head>
 <body>
 
 <h2>Advance Request Form</h2>
 
-<div id="block-message">Access Denied. You are not authorized to access this form.</div>
+<div id="block-message">❌ Access Denied. Your email is not authorized to access this form.</div>
 
 <form id="advanceForm" style="display:none;">
   <label>ENTITY TYPE <input name="entity_type" required></label>
@@ -30,12 +70,11 @@
   <label>ADVANCE REQ. PARTY <input name="advance_req_party" required></label>
   <label>ADVANCE REQ. PARTY CODE <input name="advance_req_party_code" required></label>
   <label>EXPECTED ADV. CLOSURE DATE <input name="expected_closure_date" type="date" required></label>
-  <label>ATTACHMENT OF APPROVED SIGN. COPY <input name="fileUpload" type="file" accept="application/pdf,image/*" required></label>
+  <label>ATTACHMENT OF APPROVED SIGN. COPY 
+    <input name="attachment" type="file" accept="image/*,application/pdf">
+  </label>
   <label>BILL RECEIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
   <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
-  
-  <!-- Hidden field to store uploaded file URL -->
-  <input type="hidden" name="attachment_link" id="attachment_link" />
 
   <button type="submit">Submit</button>
 </form>
@@ -61,60 +100,61 @@
           form.style.display = 'block';
           document.getElementById('block-message').style.display = 'none';
         } else {
-          document.getElementById('block-message').style.display = 'block';
           form.style.display = 'none';
+          document.getElementById('block-message').style.display = 'block';
         }
       }
     });
     google.accounts.id.prompt();
   };
 
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', function (e) {
     e.preventDefault();
 
-    const fileInput = document.querySelector("input[name='fileUpload']");
-    const file = fileInput.files[0];
+    const formData = new FormData(form);
+    const file = formData.get("attachment");
 
-    if (!file) {
-      alert("Please upload a file.");
-      return;
-    }
+    if (file && file.size > 0) {
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        const base64 = reader.result.split(',')[1];
+        const payload = new URLSearchParams();
 
-    // Upload file to Drive
-    const uploadForm = new FormData();
-    uploadForm.append("file", file);
-    uploadForm.append("action", "upload");
+        for (const [key, value] of formData.entries()) {
+          if (key !== "attachment") payload.append(key, value);
+        }
 
-    try {
-      const uploadResponse = await fetch(scriptURL + "?action=upload", {
-        method: "POST",
-        body: uploadForm,
-      });
-      const fileUrl = await uploadResponse.text();
+        payload.append("attachment", base64);
+        payload.append("attachmentName", file.name);
+        payload.append("attachmentType", file.type);
 
-      if (!fileUrl.includes("https://")) {
-        alert("File upload failed.");
-        return;
+        submitForm(payload);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const payload = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        payload.append(key, value);
       }
-
-      // Insert file link into hidden field
-      document.getElementById("attachment_link").value = fileUrl;
-
-      // Now send entire form with link to doPost
-      const formData = new FormData(form);
-      const submitResponse = await fetch(scriptURL, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await submitResponse.text();
-      alert(result);
-      form.reset();
-    } catch (error) {
-      console.error(error);
-      alert("❌ Error submitting form.");
+      submitForm(payload);
     }
   });
+
+  function submitForm(payload) {
+    fetch(scriptURL, {
+      method: "POST",
+      body: payload
+    })
+    .then(response => response.text())
+    .then(msg => {
+      alert("✅ Submitted Successfully!\n" + msg);
+      form.reset();
+    })
+    .catch(error => {
+      alert("❌ Submission failed");
+      console.error(error);
+    });
+  }
 </script>
 
 </body>
