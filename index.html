@@ -1,123 +1,174 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Advance Request Form</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef2f7;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+    .container {
+      background: white;
+      padding: 25px 30px;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: 500;
+      margin-top: 12px;
+      display: block;
+      color: #34495e;
     }
     input, select {
-      margin-bottom: 10px;
-      display: block;
-      padding: 5px;
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .hidden {
+      display: none;
+    }
+    .error {
+      text-align: center;
+      color: red;
+      font-weight: bold;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
+
+<div class="container hidden" id="formContainer">
   <h2>Advance Request Form</h2>
-
-  <div id="signinDiv"></div>
-  <p id="userEmail"></p>
-
   <form id="advanceForm">
-    <input type="text" name="entity_type" placeholder="Entity Type" required />
-    <input type="text" name="advance_against" placeholder="Advance Against" required />
-    <input type="text" name="document_no" placeholder="Document No" required />
-    <input type="date" name="advance_req_date" required />
-    <input type="text" name="advance_req_no" placeholder="Advance Req. No." required />
-    <input type="number" name="advance_req_amt" placeholder="Advance Amt." required />
-    <input type="text" name="advance_req_party" placeholder="Advance Party" required />
-    <input type="text" name="advance_req_party_code" placeholder="Party Code" required />
-    <input type="date" name="expected_closure_date" required />
-    <input type="number" name="bill_receive_expected_days" placeholder="Bill Expected Days" required />
-    
-    <label>Attachment (PDF/Image only):</label>
-    <input type="file" id="attachment" accept="application/pdf,image/*" required />
-    
-    <input type="submit" value="Submit" />
+    <label>ENTITY TYPE <input name="entity_type" required></label>
+    <label>ADVANCE AGAINST <input name="advance_against" required></label>
+    <label>DOCUMENT NO <input name="document_no"></label>
+    <label>ADVANCE REQ. DATE <input name="advance_req_date" type="date" required></label>
+    <label>ADVANCE REQ. NO. <input name="advance_req_no" required></label>
+    <label>ADVANCE REQ. AMT. <input name="advance_req_amt" type="number" required></label>
+    <label>ADVANCE REQ. PARTY <input name="advance_req_party" required></label>
+    <label>ADVANCE REQ. PARTY CODE <input name="advance_req_party_code" required></label>
+    <label>EXPECTED ADV. CLOSURE DATE <input name="expected_closure_date" type="date" required></label>
+    <label>ATTACHMENT OF APPROVED SIGN. COPY 
+      <input name="attachment" type="file" accept="image/*,application/pdf">
+    </label>
+    <label>BILL RECEIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
+    <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
+
+    <button type="submit">Submit</button>
   </form>
+</div>
 
-  <script>
-    const allowedEmails = ["samrat.dey@laserpowerinfra.com", "protulchatterjee2020@gmail.com"];
-    let userEmail = "";
+<div id="errorMsg" class="error hidden">❌ Access Denied! You are not authorized to fill this form.</div>
 
-    function handleCredentialResponse(response) {
-      const jwt = parseJwt(response.credential);
-      userEmail = jwt.email;
-      document.getElementById("userEmail").innerText = "Logged in as: " + userEmail;
+<script>
+  const allowedEmails = [
+    "samrat.dey@laserpowerinfra.com",
+    "debopriya@laserpowerinfra.com"
+  ];
+  const allowedDomain = "@laserpowerinfra.com";
+  const form = document.getElementById('advanceForm');
+  const formContainer = document.getElementById('formContainer');
+  const errorMsg = document.getElementById('errorMsg');
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxFNQQfv8iwdwIYWRimvDO_5tfTSHXc5MP_ArTdo--7MA-DnmY9I2jg9mMJJNSPRWO5/exec";
 
-      if (!allowedEmails.includes(userEmail.toLowerCase())) {
-        alert("You are not authorized to submit this form.");
-        document.getElementById("advanceForm").style.display = "none";
-        return;
-      }
-    }
+  // Google Sign-In
+  window.onload = function () {
+    google.accounts.id.initialize({
+      client_id: "995677134206-i3n2k43cvsr48ngjb6t69s7tsr0sivpj.apps.googleusercontent.com",
+      callback: (response) => {
+        const decoded = JSON.parse(atob(response.credential.split('.')[1]));
+        const email = decoded.email;
 
-    function parseJwt(token) {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
-        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      ).join(''));
-      return JSON.parse(jsonPayload);
-    }
-
-    window.onload = function () {
-      google.accounts.id.initialize({
-        client_id: "995677134206-i3n2k43cvsr48ngjb6t69s7tsr0sivpj.apps.googleusercontent.com",
-        callback: handleCredentialResponse
-      });
-      google.accounts.id.renderButton(document.getElementById("signinDiv"), {
-        theme: "outline", size: "large"
-      });
-      google.accounts.id.prompt();
-    };
-
-    document.getElementById("advanceForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const form = e.target;
-      const fileInput = document.getElementById("attachment");
-      const file = fileInput.files[0];
-
-      if (!file) {
-        alert("Please attach a file.");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = async function () {
-        const base64Data = reader.result.split(',')[1];
-        const formData = new URLSearchParams();
-
-        for (const input of form.elements) {
-          if (input.name && input.value)
-            formData.append(input.name, input.value);
+        // Restriction check
+        if (allowedEmails.includes(email) || email.endsWith(allowedDomain)) {
+          document.getElementById('userEmail').value = email;
+          formContainer.classList.remove('hidden');
+        } else {
+          errorMsg.classList.remove('hidden');
         }
-
-        formData.append("user_email", userEmail);
-        formData.append("attachmentName", file.name);
-        formData.append("attachmentType", file.type);
-        formData.append("attachmentData", base64Data);
-
-        try {
-          const response = await fetch("https://script.google.com/macros/s/AKfycbzzfpXKs2wMrRRtiD52Vx_Xi2lJTZNy0Z2Futvwt2MIGk4JqKhoytEU1Oz6O6EJZVhP/exec", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: formData
-          });
-
-          const text = await response.text();
-          alert(text.includes("✅") ? "Form submitted successfully." : "Error: " + text);
-          form.reset();
-        } catch (err) {
-          console.error(err);
-          alert("Failed to submit form.");
-        }
-      };
-      reader.readAsDataURL(file);
+      }
     });
-  </script>
+    google.accounts.id.prompt();
+  };
+
+  // Submit Handler
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const fileInput = formData.get("attachment");
+
+    if (fileInput && fileInput.size > 0) {
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        const base64Data = reader.result.split(',')[1];
+        const payload = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+          if (key !== "attachment") {
+            payload.append(key, value);
+          }
+        }
+        payload.append("attachment", base64Data);
+        payload.append("attachmentName", fileInput.name);
+        payload.append("attachmentType", fileInput.type);
+        submitForm(payload);
+      };
+      reader.readAsDataURL(fileInput);
+    } else {
+      const payload = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        payload.append(key, value);
+      }
+      submitForm(payload);
+    }
+  });
+
+  function submitForm(payload) {
+    fetch(scriptURL, {
+      method: "POST",
+      body: payload
+    })
+      .then(response => response.text())
+      .then(msg => {
+        alert(msg);
+        form.reset();
+      })
+      .catch(err => {
+        alert("❌ Submission failed");
+        console.error(err);
+      });
+  }
+</script>
+
 </body>
 </html>
