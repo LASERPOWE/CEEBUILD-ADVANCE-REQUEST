@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Advance Request Form</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,21 +24,13 @@
       margin-top: 20px;
       padding: 10px 20px;
     }
-    #block-message {
-      display: none;
-      color: red;
-      font-weight: bold;
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
 
 <h2>Advance Request Form</h2>
 
-<div id="block-message">Access Denied. You are not authorized to access this form.</div>
-
-<form id="advanceForm" style="display:none;">
+<form id="advanceForm">
   <label>ENTITY TYPE <input name="entity_type" required></label>
   <label>ADVANCE AGAINST <input name="advance_against" required></label>
   <label>DOCUMENT NO <input name="document_no"></label>
@@ -52,33 +43,21 @@
   <label>ATTACHMENT OF APPROVED SIGN. COPY <input name="attachment" type="file" accept="image/*,application/pdf"></label>
   <label>BILL RECIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
   <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
+
   <button type="submit">Submit</button>
 </form>
 
 <script>
-  const allowedEmails = [
-    "protulchatterjee2020@gmail.com",
-    "samrat.dey@laserpowerinfra.com"
-  ];
-
   const form = document.getElementById('advanceForm');
   const scriptURL = "https://script.google.com/macros/s/AKfycbzzfpXKs2wMrRRtiD52Vx_Xi2lJTZNy0Z2Futvwt2MIGk4JqKhoytEU1Oz6O6EJZVhP/exec";
 
+  // Handle Google Sign-In to autofill user email
   window.onload = function () {
     google.accounts.id.initialize({
       client_id: "995677134206-i3n2k43cvsr48ngjb6t69s7tsr0sivpj.apps.googleusercontent.com",
       callback: (response) => {
-        const decoded = jwt_decode(response.credential);
-        const email = decoded.email;
-        document.getElementById('userEmail').value = email;
-
-        if (allowedEmails.includes(email)) {
-          form.style.display = 'block';
-          document.getElementById('block-message').style.display = 'none';
-        } else {
-          document.getElementById('block-message').style.display = 'block';
-          form.style.display = 'none';
-        }
+        const decoded = JSON.parse(atob(response.credential.split('.')[1]));
+        document.getElementById('userEmail').value = decoded.email;
       }
     });
     google.accounts.id.prompt();
@@ -86,6 +65,7 @@
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const formData = new FormData(form);
     const fileInput = formData.get("attachment");
 
@@ -122,15 +102,15 @@
       method: "POST",
       body: payload
     })
-    .then(response => response.text())
-    .then(msg => {
-      alert(msg);
-      form.reset();
-    })
-    .catch(err => {
-      alert("❌ Submission failed");
-      console.error(err);
-    });
+      .then(response => response.text())
+      .then(msg => {
+        alert(msg);
+        form.reset();
+      })
+      .catch(err => {
+        alert("❌ Submission failed");
+        console.error(err);
+      });
   }
 </script>
 
