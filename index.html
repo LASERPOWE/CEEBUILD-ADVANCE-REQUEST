@@ -7,65 +7,124 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef2f7;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+    .container {
+      background: white;
+      padding: 25px 30px;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
     }
     label {
+      font-weight: 500;
+      margin-top: 12px;
       display: block;
-      margin-top: 10px;
+      color: #34495e;
     }
     input, select {
       width: 100%;
-      padding: 8px;
-      margin-top: 4px;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
     }
     button {
+      width: 100%;
       margin-top: 20px;
-      padding: 10px 20px;
+      padding: 12px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .hidden {
+      display: none;
+    }
+    .error {
+      text-align: center;
+      color: red;
+      font-weight: bold;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
 
-<h2>Advance Request Form</h2>
+<div class="container hidden" id="formContainer">
+  <h2>Advance Request Form</h2>
+  <form id="advanceForm">
+    <label>ENTITY TYPE <input name="entity_type" required></label>
+    <label>ADVANCE AGAINST <input name="advance_against" required></label>
+    <label>DOCUMENT NO <input name="document_no"></label>
+    <label>ADVANCE REQ. DATE <input name="advance_req_date" type="date" required></label>
+    <label>ADVANCE REQ. NO. <input name="advance_req_no" required></label>
+    <label>ADVANCE REQ. AMT. <input name="advance_req_amt" type="number" required></label>
+    <label>ADVANCE REQ. PARTY <input name="advance_req_party" required></label>
+    <label>ADVANCE REQ. PARTY CODE <input name="advance_req_party_code" required></label>
+    <label>EXPECTED ADV. CLOSURE DATE <input name="expected_closure_date" type="date" required></label>
+    <label>ATTACHMENT OF APPROVED SIGN. COPY 
+      <input name="attachment" type="file" accept="image/*,application/pdf">
+    </label>
+    <label>BILL RECEIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
+    <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
 
-<form id="advanceForm">
-  <label>ENTITY TYPE <input name="entity_type" required></label>
-  <label>ADVANCE AGAINST <input name="advance_against" required></label>
-  <label>DOCUMENT NO <input name="document_no"></label>
-  <label>ADVANCE REQ. DATE <input name="advance_req_date" type="date" required></label>
-  <label>ADVANCE REQ. NO. <input name="advance_req_no" required></label>
-  <label>ADVANCE REQ. AMT. <input name="advance_req_amt" type="number" required></label>
-  <label>ADVANCE REQ. PARTY <input name="advance_req_party" required></label>
-  <label>ADVANCE REQ. PARTY CODE <input name="advance_req_party_code" required></label>
-  <label>EXPECTED ADV. CLOSURE DATE <input name="expected_closure_date" type="date" required></label>
-  <label>ATTACHMENT OF APPROVED SIGN. COPY <input name="attachment" type="file" accept="image/*,application/pdf"></label>
-  <label>BILL RECIVE EXPECTED DAYS <input name="bill_receive_expected_days" type="number"></label>
-  <label>USER EMAIL <input name="user_email" id="userEmail" readonly required></label>
+    <button type="submit">Submit</button>
+  </form>
+</div>
 
-  <button type="submit">Submit</button>
-</form>
+<div id="errorMsg" class="error hidden">❌ Access Denied! You are not authorized to fill this form.</div>
 
 <script>
+  const allowedEmails = [
+    "samrat.dey@laserpowerinfra.com",
+    "debopriya@laserpowerinfra.com"
+  ];
+  const allowedDomain = "@laserpowerinfra.com";
   const form = document.getElementById('advanceForm');
+  const formContainer = document.getElementById('formContainer');
+  const errorMsg = document.getElementById('errorMsg');
   const scriptURL = "https://script.google.com/macros/s/AKfycbxFNQQfv8iwdwIYWRimvDO_5tfTSHXc5MP_ArTdo--7MA-DnmY9I2jg9mMJJNSPRWO5/exec";
 
-  // Handle Google Sign-In to autofill user email
+  // Google Sign-In
   window.onload = function () {
     google.accounts.id.initialize({
       client_id: "995677134206-i3n2k43cvsr48ngjb6t69s7tsr0sivpj.apps.googleusercontent.com",
       callback: (response) => {
         const decoded = JSON.parse(atob(response.credential.split('.')[1]));
-        document.getElementById('userEmail').value = decoded.email;
+        const email = decoded.email;
+
+        // Restriction check
+        if (allowedEmails.includes(email) || email.endsWith(allowedDomain)) {
+          document.getElementById('userEmail').value = email;
+          formContainer.classList.remove('hidden');
+        } else {
+          errorMsg.classList.remove('hidden');
+        }
       }
     });
     google.accounts.id.prompt();
   };
 
+  // Submit Handler
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const formData = new FormData(form);
     const fileInput = formData.get("attachment");
 
@@ -74,17 +133,14 @@
       reader.onloadend = function () {
         const base64Data = reader.result.split(',')[1];
         const payload = new URLSearchParams();
-
         for (const [key, value] of formData.entries()) {
           if (key !== "attachment") {
             payload.append(key, value);
           }
         }
-
         payload.append("attachment", base64Data);
         payload.append("attachmentName", fileInput.name);
         payload.append("attachmentType", fileInput.type);
-
         submitForm(payload);
       };
       reader.readAsDataURL(fileInput);
